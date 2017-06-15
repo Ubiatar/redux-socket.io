@@ -12,12 +12,17 @@
 * }
 *
 */
-export default function createSocketIoMiddleware(socket, criteria = [],
-  { eventName = 'action', execute = defaultExecute } = {}) {
+export const ACTION_NAME_ON = 'SOCKET_IO_ON/'
+export const ACTION_NAME_EMIT = 'SOCKET_IO_EMIT/'
+
+export default function createSocketIoMiddleware(socket, criteria = ACTION_NAME_EMIT,
+  { events = ['connect'], execute = defaultExecute, actionName = ACTION_NAME_ON } = {}) {
   const emitBound = socket.emit.bind(socket);
   return ({ dispatch }) => {
     // Wire socket.io to dispatch actions sent by the server.
-    socket.on(eventName, dispatch);
+    events.forEach((event) => {
+      socket.on(event, data => dispatch({type: actionName + event, data}));
+    });
     return next => (action) => {
       if (evaluate(action, criteria)) {
         return execute(action, emitBound, next, dispatch);
@@ -47,7 +52,7 @@ export default function createSocketIoMiddleware(socket, criteria = [],
   }
 
   function defaultExecute(action, emit, next, dispatch) { // eslint-disable-line no-unused-vars
-    emit(eventName, action);
+    emit(action.event, action.data);
     return next(action);
   }
 }

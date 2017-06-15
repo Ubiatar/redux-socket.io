@@ -13,8 +13,8 @@ npm install --save redux-socket.io
 ```
 
 ### Example usage
-This will create a middleware that sends actions to the server when the action type starts with "server/".
-When the socket.io socket receives a message of type 'action', it will dispatch the action to the store.
+This will create a middleware that sends actions to the server when the action type starts with the standard ACTION_NAME_EMIT ('SOCKET_IO_EMIT/').
+When the socket.io socket receives a message included in the events array, it will dispatch the action to the store in the format ACTION_NAME_ON + event (ex. 'SOCKET__IO_ON/message').
 
 The result of running this code from the client is a request to the server and a response from the server, both of
 which go through the redux store's dispatch method.
@@ -22,13 +22,15 @@ which go through the redux store's dispatch method.
 Client side:
 ```js
 import { createStore, applyMiddleware } from 'redux';
-import createSocketIoMiddleware from 'redux-socket.io';
+import createSocketIoMiddleware, {ACTION_NAME_EMIT, ACTION_NAME_ON} from 'redux-socket.io';
 import io from 'socket.io-client';
 let socket = io('http://localhost:3000');
-let socketIoMiddleware = createSocketIoMiddleware(socket, "server/");
+let socketIoMiddleware = createSocketIoMiddleware(socket, ACTION_NAME_EMIT, {events: ['connect', 'message'], actionName: ACTION_NAME_ON});
 function reducer(state = {}, action){
   switch(action.type){
-    case 'message':
+    case ACTION_NAME_ON + 'connect':
+      return Object.assign({}, {status:'connected'});
+    case ACTION_NAME_ON + 'message':
       return Object.assign({}, {message:action.data});
     default:
       return state;
